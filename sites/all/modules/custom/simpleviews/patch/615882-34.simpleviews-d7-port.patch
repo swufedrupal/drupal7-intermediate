@@ -1,0 +1,486 @@
+diff --git a/simpleviews.css b/simpleviews.css
+index c47e555..8ac57f9 100644
+--- a/simpleviews.css
++++ b/simpleviews.css
+@@ -23,6 +23,10 @@
+   padding-left: 5em;
+ }
+ 
+-#simpleviews-elements div.form-item select, #simpleviews-form div.form-item input  {
++#simpleviews-elements div.form-item select, #simpleviews-form div.form-item input.form-text  {
+   width: 18em;
+ }
++
++#simpleviews-overview-form table .operations {
++  width: 20%;
++}
+diff --git a/simpleviews.info b/simpleviews.info
+index 6471bbb..55937be 100644
+--- a/simpleviews.info
++++ b/simpleviews.info
+@@ -1,5 +1,3 @@
+ name = SimpleViews
+ description = An easy-to-use tool for bulding content listing pages.
+-dependencies[] = views
+-core = 6.x
+-package = Views
+\ No newline at end of file
++core = 7.x
+diff --git a/simpleviews.install b/simpleviews.install
+index fcdc3ec..1608e11 100644
+--- a/simpleviews.install
++++ b/simpleviews.install
+@@ -5,14 +5,6 @@
+  * SimpleViews module's install and uninstall code.
+  */
+ 
+-
+-/**
+- * Implementation of hook_install().
+- */
+-function simpleviews_install() {
+-  drupal_install_schema('simpleviews');
+-}
+-
+ /**
+  * Implementation of hook_schema().
+  */
+@@ -99,10 +91,3 @@ function simpleviews_schema() {
+   );
+   return $schema;
+ }
+-
+-/**
+- * Implementation of hook_uninstall().
+- */
+-function simpleviews_uninstall() {
+-  drupal_uninstall_schema('simpleviews');
+-}
+diff --git a/simpleviews.js b/simpleviews.js
+index 32c0b8d..0b810d8 100644
+--- a/simpleviews.js
++++ b/simpleviews.js
+@@ -1,5 +1,6 @@
+ 
+ jQuery(document).ready(function(){
++  // @todo: no preview - this also breaks the layout in Seven.
+   // jQuery("div#simpleviews-elements").prepend('<div id="simpleview-preview-img"></div>');
+   jQuery("#edit-arg-toggle").bind("change", function() {
+     if (this.checked) {
+diff --git a/simpleviews.module b/simpleviews.module
+index 2fe7a8d..6aecce7 100644
+--- a/simpleviews.module
++++ b/simpleviews.module
+@@ -16,7 +16,7 @@
+ function simpleviews_menu() {
+   $items = array();
+ 
+-  $items['admin/build/simpleviews'] = array(
++  $items['admin/structure/simpleviews'] = array(
+     'title' => 'Simple views',
+     'description' => 'Manage views.',
+     'page callback' => 'drupal_get_form',
+@@ -25,36 +25,28 @@ function simpleviews_menu() {
+     'file' => 'simpleviews.pages.inc',
+   );
+ 
+-  $items['admin/build/simpleviews/list'] = array(
+-    'title' => 'List',
+-    'type' => MENU_DEFAULT_LOCAL_TASK,
+-    'weight' => -10,
+-  );
+-
+-  $items['admin/build/simpleviews/add'] = array(
++  $items['admin/structure/simpleviews/add'] = array(
+     'title' => 'Add view',
+     'page callback' => 'drupal_get_form',
+     'page arguments' => array('simpleviews_form'),
+     'access arguments' => array('administer simpleviews'),
+-    'type' => MENU_LOCAL_TASK,
++    'type' => MENU_LOCAL_ACTION,
+     'file' => 'simpleviews.pages.inc',
+   );
+ 
+-  $items['admin/build/simpleviews/%simpleviews_item/edit'] = array(
++  $items['admin/structure/simpleviews/%simpleviews_item/edit'] = array(
+     'title' => 'Edit view',
+     'page callback' => 'drupal_get_form',
+     'page arguments' => array('simpleviews_form', 3),
+     'access arguments' => array('administer simpleviews'),
+-    'type' => MENU_CALLBACK,
+     'file' => 'simpleviews.pages.inc',
+   );
+ 
+-  $items['admin/build/simpleviews/%simpleviews_item/delete'] = array(
++  $items['admin/structure/simpleviews/%simpleviews_item/delete'] = array(
+     'title' => 'Delete view',
+     'page callback' => 'drupal_get_form',
+     'page arguments' => array('simpleviews_delete_confirm', 3),
+     'access arguments' => array('administer simpleviews'),
+-    'type' => MENU_CALLBACK,
+     'file' => 'simpleviews.pages.inc',
+   );
+ 
+@@ -62,18 +54,23 @@ function simpleviews_menu() {
+ }
+ 
+ /**
+- * Implementation of hook_perm().
++ * Implement hook_permission().
+  *
+  * Defines access permissions that may be assigned to roles and used to restrict
+  * access.
+  */
+-function simpleviews_perm() {
+-  return array('administer simpleviews');
++function simpleviews_permission() {
++  return array(
++    'administer simpleviews' => array(
++      'title' => t('Administer SimpleViews'),
++      'description' => t('Create, edit and delete Views via the SimpleViews interface.'),
++    ),
++  );
+ }
+ 
+ 
+ /**
+- * Implementation of hook_theme().
++ * Implement hook_theme().
+  *
+  * Returns information about every themable function defined by the module.
+  */
+@@ -81,11 +78,11 @@ function simpleviews_theme() {
+   $items = array();
+ 
+   $items['simpleviews_overview_form'] = array(
+-    'arguments' => array('form' => array()),
++    'render element' => 'form',
+     'file' => 'simpleviews.pages.inc',
+   );
+   $items['simpleviews_edit_form'] = array(
+-    'arguments' => array('form' => array()),
++    'render element' => 'form',
+     'file' => 'simpleviews.pages.inc',
+   );
+ 
+@@ -93,16 +90,11 @@ function simpleviews_theme() {
+ }
+ 
+ /**
+- * Implementation of hook_form_alter().
++ * Implement hook_form_alter().
+  *
+  * Adds the 'make a listing page' checkbox on each content type's settings form.
+  */
+ function simpleviews_form_node_type_form_alter(&$form, &$form_state) {
+-  $form['identity']['simpleviews_type'] = array(
+-    '#type' => 'checkbox',
+-    '#title' => t('Make a listing page for this content type'),
+-    '#default_value' => variable_get('simpleviews_type_'. $form['#node_type']->type, FALSE),
+-  );
+   $form['identity']['simpleviews_type_previous'] = array(
+     '#type' => 'value',
+     '#value' => variable_get('simpleviews_type_'. $form['#node_type']->type, FALSE),
+@@ -119,8 +111,7 @@ function simpleviews_content_type_submit($form, $form_state) {
+   $type = $form['#node_type']->type;
+   $values = $form_state['values'];
+   if ($values["simpleviews_type_previous_$type"] != $values["simpleviews_type_$type"]) {
+-    variable_set('menu_needs_rebuild', TRUE);
+-    views_invalidate_cache();
++    module_invoke_all('simpleviews_refresh');
+   }
+ }
+ 
+@@ -138,9 +129,8 @@ function simpleviews_content_type_submit($form, $form_state) {
+  *   A single record in array format, or FALSE if none matched the incoming ID.
+  */
+ function simpleviews_item_load($svid) {
+-  $sql = "SELECT * FROM {simpleviews} WHERE svid = %d";
+-  $result = db_query($sql, $svid);
+-  if ($record = db_fetch_array($result)) {
++  $result = db_query("SELECT * FROM {simpleviews} WHERE svid = :svid", array(':svid' => $svid));
++  if ($record = $result->fetchAssoc()) {
+     return $record;
+   }
+   else {
+@@ -173,8 +163,7 @@ function simpleviews_item_save($item) {
+     drupal_write_record('simpleviews', $item);
+   }
+ 
+-  views_invalidate_cache();
+-  menu_rebuild();
++  module_invoke_all('simpleviews_refresh');
+   return $item;
+ }
+ 
+@@ -185,15 +174,13 @@ function simpleviews_item_save($item) {
+  *   An int containing the ID of an item.
+  */
+ function simpleviews_item_delete($svid) {
+-  $sql = 'DELETE FROM {simpleviews} WHERE svid = %d';
+-  db_query($sql, $svid);
+-  
+-  variable_set('menu_needs_rebuild', TRUE);
+-  views_invalidate_cache();
++  db_query('DELETE FROM {simpleviews} WHERE svid = :svid', array(':svid' => $svid));
++
++  module_invoke_all('simpleviews_refresh');
+ }
+ 
+ /**
+- * Implementation of hook_views_api.
++ * Implement hook_views_api().
+  */
+ function simpleviews_views_api() {
+   return array(
+@@ -225,3 +212,11 @@ function simpleviews_default_data() {
+     'block' => TRUE,
+   );
+ }
++
++/**
++ * Implement hook_simpleviews_refresh().
++ */
++function simpleviews_simpleviews_refresh() {
++  module_invoke('views', 'invalidate_cache');
++  variable_set('menu_needs_rebuild', TRUE);
++}
+diff --git a/simpleviews.pages.inc b/simpleviews.pages.inc
+index 557b761..028759d 100644
+--- a/simpleviews.pages.inc
++++ b/simpleviews.pages.inc
+@@ -11,17 +11,28 @@
+  * @see simpleviews_overview_form_submit()
+  * @see theme_simpleviews_overview_form()
+  */
+-function simpleviews_overview_form(&$form_state) {
+-  $results = db_query("SELECT * FROM {simpleviews}");
++function simpleviews_overview_form($form, &$form_state) {
++  $results = db_query(
++    "SELECT * FROM {simpleviews}",
++    array(),
++    array(
++      'fetch' => PDO::FETCH_ASSOC,
++    )
++  );
+   $items = array();
+-  while ($item = db_fetch_array($results)) {
++  foreach ($results as $item) {
+     $items[$item['svid']] = $item;
+   }
+ 
+-  $form['items']['#tree'] = TRUE;
+-  foreach ($items as $svid => $item) {
+-    $form['items'][$svid] = _simpleviews_overview_item_field($item);
++  if (count($items)) {
++    $form['items']['#tree'] = TRUE;
++    foreach ($items as $svid => $item) {
++      $form['items'][$svid] = _simpleviews_overview_item_field($item);
++    }
+   }
++  $form['#attached']['css'] = array(
++    drupal_get_path('module', 'simpleviews') . '/simpleviews.css'
++  );
+ 
+   return $form;
+ }
+@@ -40,29 +51,25 @@ function _simpleviews_overview_item_field($item) {
+ 
+   $form['title'] = array(
+     '#type' => 'markup',
+-    '#value' => check_plain($item['title']),
++    '#markup' => check_plain($item['title']),
+   );
+ 
+   $form['path'] = array(
+     '#type' => 'markup',
+-    '#value' => l($item['path'], $item['path']),
+-  );
+-
+-  $path = drupal_get_path('module', 'simpleviews') . '/images/';
+-  $links[] = array(
+-    'title' => theme('image', $path . 'text-editor.png', t('Edit'), t('Edit')),
+-    'href' => 'admin/build/simpleviews/' . $item['svid'] . '/edit',
+-    'html' => TRUE,
+-  );
+-  $links[] = array(
+-    'title' => theme('image', $path . 'edit-delete.png', t('Delete'), t('Delete')),
+-    'href' => 'admin/build/simpleviews/' . $item['svid'] . '/delete',
+-    'html' => TRUE,
++    '#markup' => l($item['path'], $item['path']),
+   );
+ 
+   $form['operations'] = array(
+-    '#type' => 'markup',
+-    '#value' => theme('links', $links),
++    'edit' => array(
++      '#type' => 'link',
++      '#title' => t('edit'),
++      '#href' => 'admin/structure/simpleviews/' . $item['svid'] . '/edit',
++    ),
++    'delete' => array(
++      '#type' => 'link',
++      '#title' => t('delete'),
++      '#href' => 'admin/structure/simpleviews/' . $item['svid'] . '/delete',
++    ),
+   );
+ 
+   return $form;
+@@ -77,8 +84,10 @@ function _simpleviews_overview_item_field($item) {
+  * @ingroup forms
+  * @see simpleviews_overview_form()
+  */
+-function theme_simpleviews_overview_form($form) {
++function theme_simpleviews_overview_form($variables) {
++  $form = $variables['form'];
+   $rows = array();
++  $column_count = 0;
+   foreach (element_children($form['items']) as $key) {
+     $row = array();
+ 
+@@ -86,23 +95,30 @@ function theme_simpleviews_overview_form($form) {
+     // same column of the row.
+     $row[] = drupal_render($form['items'][$key]['svid']) . drupal_render($form['items'][$key]['title']);
+     $row[] = drupal_render($form['items'][$key]['path']);
+-    $row[] = drupal_render($form['items'][$key]['operations']);
++    foreach ($form['items'][$key]['operations'] as &$operation) {
++      if (is_array($operation) && isset($operation['#type'])) {
++        // Only render actual operations, skip auxiliary FormAPI items.
++        $row[] = drupal_render($operation);
++      }
++    }
+     $rows[] = $row;
++    $column_count = max($column_count, count($row));
+   }
+ 
+   // If there were no items found, note the fact so users don't get confused
+   // by a completely empty table.
+   if (count($rows) == 0) {
+     $rows[] = array(array('data' => t('No items have been added.'), 'colspan' => 3));
++    $column_count = 3;
+   }
+ 
+   // Render a list of header titles, and our array of rows, into a table. Even
+   // we've already rendered all of our items, we always call drupal_render()
+   // on the form itself after we're done, so hidden security fields and other
+   // elements (like buttons) will appear properly at the bottom of the form.
+-  $header = array(t('Title'), t('Path'), t('Operations'));
+-  $output = theme('table', $header, $rows);
+-  $output .= drupal_render($form);
++  $header = array(t('Title'), t('Path'), array('data' => t('Operations'), 'colspan' => $column_count - 2, 'class' => 'operations'));
++  $output = theme('table', array('header' => $header, 'rows' => $rows));
++  $output .= drupal_render_children($form);
+ 
+   return $output;
+ }
+@@ -121,7 +137,7 @@ function theme_simpleviews_overview_form($form) {
+  * @see simpleviews_form_submit()
+  * @see simpleviews_form_delete()
+  */
+-function simpleviews_form(&$form_state, $simpleview = array()) {
++function simpleviews_form($form, &$form_state, $simpleview = array()) {
+   $form['simpleview'] = _simpleviews_form($simpleview);
+ 
+   $form['buttons']['submit'] = array(
+@@ -185,7 +201,7 @@ function _simpleviews_form($simpleview = array()) {
+     '#required' => TRUE,
+     '#default_value' => $simpleview['filter'],
+   );
+-  foreach (node_get_types('names') as $type => $name) {
++  foreach (node_type_get_names() as $type => $name) {
+     $form['filter']['#options']['node:'. $type] = t('!type posts', array('!type' => $name));
+   }
+ 
+@@ -253,7 +269,7 @@ function _simpleviews_form($simpleview = array()) {
+   $form['block'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Create a sidebar widget'),
+-    '#default_value' => $simpleview['rss'],
++    '#default_value' => $simpleview['block'],
+   );
+ 
+   drupal_alter('simpleview_reusable_form', $form, $simpleview);
+@@ -276,7 +292,8 @@ function simpleviews_preprocess_arg_element(&$element, &$form_state) {
+ /**
+  * Simple theme wrapper for the simpleview edit form, adds CSS and JS.
+  */
+-function theme_simpleviews_edit_form($form) {
++function theme_simpleviews_edit_form($variables) {
++  $form = $variables['form'];
+   drupal_add_css(drupal_get_path('module', 'simpleviews') . '/simpleviews.css');
+   drupal_add_js(drupal_get_path('module', 'simpleviews') . '/simpleviews.js');
+ 
+@@ -284,7 +301,7 @@ function theme_simpleviews_edit_form($form) {
+   $form['argument']['argument']['#prefix'] = '<div id="simpleviews-arg-wrapper"' . $extra . '>';
+   $form['argument']['argument']['#suffix'] = '</div>';
+ 
+-  $output = '<div id="simpleviews-elements">' . drupal_render($form) . '</div>';
++  $output = '<div id="simpleviews-elements">'. drupal_render_children($form) . '</div>';
+   return $output;
+ }
+ 
+@@ -301,8 +318,9 @@ function theme_simpleviews_edit_form($form) {
+ function simpleviews_form_submit($form, &$form_state) {
+   $item = $form_state['values'];
+   simpleviews_item_save($item);
+-  views_flush_caches();
+-  $form_state['redirect'] = 'admin/build/simpleviews';
++  // @todo: views_flush_caches() returns an array?!?
++  // views_flush_caches();
++  $form_state['redirect'] = 'admin/structure/simpleviews';
+ }
+ 
+ 
+@@ -316,7 +334,7 @@ function simpleviews_form_submit($form, &$form_state) {
+  * @see simpleviews_form()
+  */
+ function simpleviews_form_delete($form, &$form_state) {
+-  $form_state['redirect'] = 'admin/build/simpleviews/' . $form_state['values']['svid'] . '/delete';
++  $form_state['redirect'] = 'admin/structure/simpleviews/' . $form_state['values']['svid'] . '/delete';
+ }
+ 
+ 
+@@ -330,7 +348,7 @@ function simpleviews_form_delete($form, &$form_state) {
+  * @see simpleviews_delete_confirm_submit()
+  * @see confirm_form()
+  */
+-function simpleviews_delete_confirm(&$form_state, $item) {
++function simpleviews_delete_confirm($form, &$form_state, $item) {
+   $form['svid'] = array(
+     '#type' => 'value',
+     '#value' => $item['svid'],
+@@ -338,7 +356,7 @@ function simpleviews_delete_confirm(&$form_state, $item) {
+ 
+   return confirm_form($form,
+     t('Are you sure you want to delete %title?', array('%title' => $item['title'])),
+-    isset($_GET['destination']) ? $_GET['destination'] : 'admin/build/simpleviews',
++    isset($_GET['destination']) ? $_GET['destination'] : 'admin/structure/simpleviews',
+     t('This action cannot be undone.'),
+     t('Delete'),
+     t('Cancel')
+@@ -355,11 +373,10 @@ function simpleviews_delete_confirm(&$form_state, $item) {
+  * @ingroup formapi
+  * @see simpleviews_form()
+  */
+-
+ function simpleviews_delete_confirm_submit($form, &$form_state) {
+   if ($form_state['values']['confirm']) {
+     simpleviews_item_delete($form_state['values']['svid']);
+     drupal_set_message(t('Your item was deleted.'));
+   }
+-  $form_state['redirect'] = 'admin/build/simpleviews';
++  $form_state['redirect'] = 'admin/structure/simpleviews';
+ }
+diff --git a/simpleviews.views_default.inc b/simpleviews.views_default.inc
+index 761a5fd..5b0dfa1 100644
+--- a/simpleviews.views_default.inc
++++ b/simpleviews.views_default.inc
+@@ -8,6 +8,8 @@
+  * views_ui and customized by advanced users.
+  */
+ function simpleviews_views_default_views() {
++  // TODO - update this code!
++  return array();
+   $views = array();
+ 
+   $results = db_query("SELECT * FROM {simpleviews}");
