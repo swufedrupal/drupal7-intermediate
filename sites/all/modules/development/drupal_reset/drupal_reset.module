@@ -1,0 +1,119 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function drupal_reset_menu() {
+  $items['admin/config/development/drupal_reset'] = array(
+    'title' => 'Drupal reset',
+    'description' => 'Deletes all database tables and files for the current site and redirect back to install.php.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drupal_reset_admin_settings'),
+    'access arguments' => array('reset drupal'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function drupal_reset_permission() {
+  return array(
+    'reset drupal' => array(
+      'title' => t('Drupal reset'),
+      'description' => t('Deletes all database tables and files for the current site and redirect back to install.php.'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_form().
+ */
+function drupal_reset_admin_settings() {
+  if (drupal_reset_is_supported_database_configuration()) {
+    $form['drupal_reset_agree'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Delete all database tables and files'),
+      '#prefix' => '<strong>Select this option to delete all database tables and files for the current site, resetting the site so that Drupal is ready to be reinstalled from scratch.</strong>',
+    );
+
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Reset this site'),
+    );
+
+    $form['#validate'][] = 'drupal_reset_admin_settings_validate';
+    $form['#submit'][] = 'drupal_reset_admin_settings_submit';
+  }
+  else {
+    $form['drupal_reset_message'] = array(
+      '#markup' => '<p>Your database configuration is not supported by Drupal reset. There must be one database (no master/slave) and the table prefix must be set to a string (not an array); use the empty string if you do not want a prefix. See your settings.php file.</p>',
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Validation function for admin settings.
+ */
+function drupal_reset_admin_settings_validate($form, &$form_state) {
+  if (!$form_state['values']['drupal_reset_agree']) {
+    form_set_error('drupal_reset_agree', t('You must select "Delete all database tables and files" before you submit the form.'));
+  }
+}
+
+/**
+ * Submit handler for admin form.
+ */
+function drupal_reset_admin_settings_submit($form, &$form_state) {
+  // Delete everything from the files directory.
+  drupal_reset_rrmdir(conf_path() . '/files');
+
+  // Delete all database tables.
+  global $databases;
+  $tables = db_find_tables($databases['default']['default']['prefix'] . '%');
+  foreach ($tables as $table) {
+    db_drop_table($table);
+  }
+
+  // Redirect to install page.
+  drupal_goto('install.php');
+}
+
+/**
+ * Recursive directory deletion.
+ */
+function drupal_reset_rrmdir($dir) {
+  if (!empty($dir) && is_dir($dir)) {
+    $objects = scandir($dir);
+    foreach ($objects as $object) {
+      if ($object !== '.' && $object !== '..') {
+        $this_object = $dir . '/' . $object;
+        if (filetype($this_object) === 'dir') {
+          drupal_reset_rrmdir($this_object);
+        }
+        else {
+          unlink($this_object);
+        }
+      }
+    }
+    rmdir($dir);
+  }
+}
+
+/**
+ * Check if the installation uses a single-database and a simple prefix.
+ */
+function drupal_reset_is_supported_database_configuration() {
+  global $databases;
+  if (isset($databases['default']['default']) && count($databases['default']) === 1 && isset($databases['default']['default']['prefix']) && is_string($databases['default']['default']['prefix'])) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
