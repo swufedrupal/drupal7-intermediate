@@ -1,0 +1,23 @@
+# Drupal 7 Standard Intermediate 
+* This is a tweaked installation of Drupal 7 used for teaching and educational purposed at Mark Koester (markwk)'s SWUFE Introduction to Drupal class during the Fall Semester 2011. 
+* It includes a basic set of useful modules for site building and development as well as modules for multilingual development.  
+
+## Goal / Intentions:
+* This collection of modules and tools is an attempt to provide the most useful tools for Drupal site building.
+* It also provides a base for creating dummy and demonstration sites and working on installation profiles and resetting to a certain stage.
+
+## Learning:
+This code base will be used to develop and work on certain drupal topics including:
+1. site building with basic core and contrib modules
+2. building features with views, features and strongarm modules
+3. theming
+
+## Teaching Projects:
+* Creating a blog or topical site with Drupal 7 or DrupalGardens.com
+* Creating a presentational site for a business or school 
+* Creating a community site for engagement and sharing and whatnot.
+
+## Maintainer / Instructor
+* markwk (Mark Koester)
+* https://github.com/markwk
+* http://drupal.org/user/1094790 (a bit of a late arrival at the party)
