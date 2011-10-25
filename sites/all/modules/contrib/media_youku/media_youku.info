@@ -1,0 +1,16 @@
+name = Media: YouKu
+description = Provides YouKu support to the Media module.
+package = "Media"
+core = 7.x
+files[] = media_youku.module
+files[] = includes/MediaYouKuStreamWrapper.inc
+files[] = includes/MediaInternetYouKuHandler.inc
+files[] = includes/media_youKu.styles.inc
+files[] = includes/MediaYouKuStyles.inc
+dependencies[] = media_internet
+; Information added by drupal.org packaging script on 2011-08-04
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "media_youku"
+datestamp = "1312418250"
+
