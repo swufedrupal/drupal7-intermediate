@@ -1,6 +1,19 @@
 # Drupal 7 Standard Intermediate 
-* This is a tweaked installation of Drupal 7 used for teaching and educational purposed at Mark Koester (markwk)'s SWUFE Introduction to Drupal class during the Fall Semester 2011. 
+
+For original README, please see README-DRUPAL.txt
+
+## Contents:
+* Introduction
+* Goals, Learning and Project
+* Maintainer / Contact info
+* Usage Notes
+* Installation Profile, Module, Theme and Other Contents with Notes.
+
+## Drupal 7 Standard Intermediate: Introduction 
+* This is a tweaked installation of Drupal 7 used for teaching and educational purposes during Mark Koester (markwk)'s SWUFE Introduction to Drupal class during the Fall Semester 2011. 
 * It includes a basic set of useful modules for site building and development as well as modules for multilingual development.  
+* It also includes several modules for standard Drupal development whether as a coder, site builder or new Drupal user. 
+* There are a few installation profiles for creating Drupal sites in different languages as well as (hopefully!) a few starter installations for installing Drupal for a few standard use cases.
 
 ## Goal / Intentions:
 * This collection of modules and tools is an attempt to provide the most useful tools for Drupal site building.
@@ -16,8 +29,107 @@ This code base will be used to develop and work on certain drupal topics includi
 * Creating a blog or topical site with Drupal 7 or DrupalGardens.com
 * Creating a presentational site for a business or school 
 * Creating a community site for engagement and sharing and whatnot.
+* Using Features module and Profiler Builder modules along with Profiler library to create custom Drupal installation profiles. 
 
 ## Maintainer / Instructor
 * markwk (Mark Koester)
+* Int3c.com Drupal Multilingual Development 
 * https://github.com/markwk
 * http://drupal.org/user/1094790 (a bit of a late arrival at the party)
+
+## Usage Notes:
+* It is recommend that all contrib code (modules and themes downloaded from Drupal.org) should be upgraded to the latest stable release and left untouched. 
+* Any custom modified code should be added to the sites/all/modules/custom or sites/all/themes/custom directories. 
+* Also for anyone new to Drupal, it is advisable to NOT HACK CORE. Hacking at core Drupal makes it impossible upgrade. 
+
+# Installation Profiles
+
+## Current Installation Profiles
+* minimal: Drupal's most basic installation (i.e. fewest modules)
+* standard: Drupal's standard installation 
+* l10n_install: Install Drupal in any number of languages
+
+## Planned or In Development Installation Profiles
+* starter_install: basically an installation profile 
+* blogger_install
+* community_install
+* club_install
+* biz_install
+* opencampus_install
+
+# Non-Core Modules
+
+## Contrib Modules
+* calendar
+* colorbox
+* ctools
+* date
+* email
+* features
+* fivestar
+* flag
+* google_analytics
+* jquery_ui
+* libraries
+* link
+* media
+* media_youku (note: still in dev in D7!)
+* mollom
+* nice_menus
+* pathauto
+* profiler_builder (note: still in dev in D7!)
+* quicktabs
+* rules
+* simpleviews (note: it is recommended you use the full views module instead of this module)
+* strongarm
+* token
+* views
+* views_slideshow
+* votingapi
+* webform
+* wysiwyg
+
+## Development Modules:
+* admin_menu
+* backup_migrate
+* coder
+* demo
+* devel
+* drupal_reset
+* module_filter
+* skinr
+
+## Multilingual Modules:
+* i18n
+* i18nviews
+* l10n_client
+* l10n_update
+* languageicons
+* translation_overview
+* variable
+
+### Notes about Modules:
+* These are basically the most standard and useful modules for Drupal 7 website building. A lot of same modules are used on projects like DrupalGardens.com with a few notable additions. 
+* The have been divided into several parts: contrib (basically useful modules beyond core drupal), custom (which is where you should store any custom modules or modules that are development), development (several useful modules for using, developing and coding with Drupal), features (this is where you should store any "feature" modules created using features module!), and multilingual (the basic suite of D7 modules for creating multilingual sites).
+
+## Contrib Themes
+* acquia_marina
+* acquia_prosper
+* colourise
+* danland
+* deco
+* fusion
+* mix_and_match
+* omega
+* sky
+* zeropoint
+
+### Notes about Themes:
+* The two standard approaches to creating and using themes are using one of two base themes: Omega or fusion. Both provide a solid place to begin creating your own custom look and style. They both handle a lot of the positioning and spacing issues common to cross-browser design.  
+
+## Libraries:
+* ckeditor (useful for wysiwyg editor)
+* tinymce (useful for wysiwyg editor)
+* FirePHPCore (used with the devel development suite of modules)
+
+
